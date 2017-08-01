@@ -1,7 +1,7 @@
 <service>
 	<serviceName>doctor</serviceName>
 	<serviceDescription>Realiza preguntas sobre salud, enfermedades y sintomas</serviceDescription>
-	<creatorEmail>salvi.pascual@gmail.com</creatorEmail>
+	<creatorEmail>salvi@apretaste.com</creatorEmail>
 	<serviceCategory>informativo</serviceCategory>
 	<serviceUsage>
 		<![CDATA[
