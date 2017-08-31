@@ -22,21 +22,20 @@ class Doctor extends Service
 		if(empty($request->query))
 		{
 			$response = new Response();
-			$response->setResponseSubject("Que desea buscar en Wikipedia?");
+			$response->setCache();
+			$response->setResponseSubject("Que desea preguntale al doctor?");
 			$response->createFromTemplate("home.tpl", array());
 			return $response;
 		}
 
-		$chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0987654321";
+		// lower case and remove tildes for the term
 		self::$term = trim(strtolower($request->query));
+		self::$term = $this->utils->removeTildes(self::$term);
 
-		if (self::$term == '') self::$term = '-';
-
+		// get the right URL to pull info
+		$url = "https://www.nlm.nih.gov/medlineplus/spanish/ency/encyclopedia_A.htm";
 		$first = ucfirst(self::$term[0]);
-
-		$url = "https://www.nlm.nih.gov/medlineplus/spanish/ency/encyclopedia_A.htm"; // default
-
-		if (strpos($chars, $first) !== false) {
+		if (strpos("ABCDEFGHIJKLMNOPQRSTUVWXYZ0987654321", $first) !== false) {
 			if (strpos("0987654321", $first) !== false) {
 				$url = "https://www.nlm.nih.gov/medlineplus/spanish/ency/encyclopedia_0-9.htm";
 			} else
@@ -49,66 +48,68 @@ class Doctor extends Service
 		// create a crawler
 		try {
 			$crawler = $client->request('GET', $url);
-		}
-		catch (exception $e) {
+		} catch (exception $e) {
+			// Send an error notice to programmer
+			$this->utils->createAlert("DOCTOR: Error al leer resultados: ".self::$term, "ERROR");
+
+			// respond to user
 			$response = new Response();
 			$response->setResponseSubject("DOCTOR: Estamos presentando problemas");
-			$response->createFromText("Estamos presentando problemas con la enciclopedia m&eacute;dica. Por favor intente m&aacute;s tarde y contacte al soporte t&eacute;cnico.");
+			$response->createFromText("Estamos presentando problemas con el doctor. Por favor intente m&aacute;s tarde. Hemos avisado al personal tecnico para corregir este error.");
 			return $response;
 		}
 
 		try {
 			$result = $crawler->filter("a")->each(function ($node, $i) {
 				if (strpos($node->attr('href'), "article/") !== false) {
-					$text = strtolower(trim($node->text())); $text = htmlentities($text); $text = str_replace(array(
-						'acute',
-						'&',
-						';',
-						'tilde'), '', $text); $term = strtolower(trim(self::$term)); $term = str_replace(array(
-						'acute',
-						'&',
-						';',
-						'tilde'), '', $term); $simil = 0; $similx = similar_text($text, $term, $simil); if ($simil >= 60) {
-						$art_id = $node->attr('href'); $art_id = str_replace(array('article/', '.htm'), '', $art_id); self::$similar_terms[$art_id] = $node->text(); }
+					// remove tildes and special chars
+					$text = $this->utils->removeTildes($node->text());
 
+					// add all similar terms to the list of similar
+					similar_text($text, self::$term, $simil);
+					if ($simil >= 60) {
+						$art_id = $node->attr('href');
+						$art_id = str_replace(array('article/', '.htm'), '', $art_id);
+						self::$similar_terms[$art_id] = $node->text();
+					}
+
+					// find the term that is closer to the text passed
 					if ($simil > self::$max && $simil >= 85) {
-						self::$max = $simil; self::$article = $node->attr('href'); }
+						self::$max = $simil;
+						self::$article = $node->attr('href');
+					}
 				}
-			}
-			);
-		}
-		catch (exception $e) {
-		}
+			});
+		} catch (exception $e) {}
 
-		$artid = str_replace(array(
-			'article/',
-			'.htm',
-			'./',
-			'article'), '', self::$article);
+		// remove the current ID from the list of similar terms
+		$artid = str_replace(array('article/','.htm','./','article'), '', self::$article);
+		if (isset(self::$similar_terms[$artid])) unset(self::$similar_terms[$artid]);
 
-		if (isset(self::$similar_terms[$artid]))
-			unset(self::$similar_terms[$artid]);
-
-		if (!is_null(self::$article)) {
-			$result = $this->getArticle(self::$article);
-			if ($result !== false) {
-				$responseContent = array(
-					"term" => $result['title'],
-					"result" => $result['body'],
-					"similars" => self::$similar_terms);
-
-				// create the response
-				$response = new Response();
-				$response->setResponseSubject("Respuesta a su busqueda: " . self::$term);
-				$response->createFromTemplate("basic.tpl", $responseContent);
-				return $response;
-			}
+		// respond with error if article not found
+		if(empty(self::$article)){
+			$response = new Response();
+			$response->setCache();
+			$response->setResponseSubject("No se encontro respuesta para " . self::$term);
+			$response->createFromTemplate("not_found.tpl", array("term" => self::$term, "similars" => self::$similar_terms));
+			return $response;
 		}
 
+		// get the article ID of the term selected
+		$article = $this->getArticle($artid);
+
+		// create array to send info to the view
+		$responseContent = array(
+			"term" => $article['title'],
+			"result" => $article['body'],
+			"similars" => self::$similar_terms
+		);
+
+		// create the response
 		$response = new Response();
-		$response->setResponseSubject("No se encontro respuesta a su busqueda: " . self::$term);
-		$response->createFromTemplate("not_found.tpl", array("term" => self::$term, "similars" => self::$similar_terms));
-
+		$response->setCache();
+		$response->setResponseSubject("Respuesta a su busqueda: " . self::$term);
+		$response->createFromTemplate("basic.tpl", $responseContent);
 		return $response;
 	}
 
@@ -120,102 +121,66 @@ class Doctor extends Service
 	 */
 	public function _articulo(Request $request)
 	{
-		$result = $this->getArticle("article/" . $request->query . ".htm");
+		$result = $this->getArticle($request->query);
 
-		if ($result === false) {
+		if (empty($result)) {
 			$response = new Response();
+			$response->setCache();
 			$response->setResponseSubject("No se encontro respuesta a su busqueda: " . self::$term);
 			$response->createFromText("No se encontr&oacute; respuesta a su b&uacute;squeda: " . self::$term);
 			return $response;
 		}
 
-		// create a json object to send to the template
-		$responseContent = array("term" => $result['title'], "result" => $result['body']);
+		// create an object to send to the template
+		$responseContent = array(
+			"term" => $result['title'],
+			"result" => $result['body'],
+			"similars" => array()
+		);
 
 		// create the response
 		$response = new Response();
+		$response->setCache();
 		$response->setResponseSubject("Enciclopedia medica:" . $result['title']);
 		$response->createFromTemplate("basic.tpl", $responseContent);
-
 		return $response;
 	}
 
-	private function getArticle($path)
+	/**
+	 * Get an article based on the ID
+	 */
+	private function getArticle($artid)
 	{
-		$artid = str_replace(array(
-			'article/',
-			'.htm',
-			'./',
-			'article'), '', $path);
-
-		$client = new Client();
-		$url = "https://www.nlm.nih.gov/medlineplus/spanish/ency/" . $path;
-
+		// get the crawler object
 		try {
+			$url = "https://www.nlm.nih.gov/medlineplus/spanish/ency/article/$artid.htm";
+			$client = new Client();
 			$crawler = $client->request('GET', $url);
-		}
-		catch (exception $e) {
-			return false;
-		}
+		} catch (exception $e) { return false; }
 
-		$title = false;
-
+		// get the title
+		$title = "";
 		try {
 			$title = $crawler->filter("div.page-title >h1")->text();
-		}
-		catch (exception $e) { }
+		} catch (exception $e) { }
 
+		// get the summary
+		$summary = "";
 		try {
-			$result = $crawler->filter("div#d-article div.main")->html();
-			try {
-				self::$temp = array();
+			$summary = $crawler->filter("div#ency_summary")->html();
+			$summary = $this->utils->removeTildes($summary);
+			$summary = preg_replace('#<a.*?>(.*?)</a>#i', '\1', $summary); // remove links
+		} catch (exception $e) { }
 
-				$crawler->filter("div.sec-mb")->each(function ($node, $i) {
-					self::$temp[] = $node->html(); }
-				);
+		// get the body
+		$body = "";
+		try {
+			$body = $crawler->filter("div.section-body")->html();
+			$body = $this->utils->removeTildes($body); // remove tidles
+			$body = preg_replace('#<a.*?>(.*?)</a>#i', '\1', $body); // remove links
+		} catch (exception $e) { }
 
-				foreach (self::$temp as $s) {
-					$result = str_replace($s, '', $result);
-				}
-			}
-			catch (exception $e) { }
-		}
-		catch (exception $e) {
-			return false;
-		}
-
-		$result = strip_tags($result, "<a><h1><p><h2><h3><b><i><u><div><ul><li>");
-		$result = str_replace("Hojee la enciclopedia", "", $result);
-
-		if ($title === false)
-			$title = strip_tags(substr($result, 0, 100));
-
-		$articles = array();
-		$p3 = 0;
-
-		while (strpos($result, '<a href="./', $p3) !== false) {
-			$p = strpos($result, '<a href="./', $p3);
-			$p2 = strpos($result, '.htm">', $p);
-			$p3 = strpos($result, '</a>', $p2);
-			$art = substr($result, $p + 11, $p2 - $p - 11);
-			if (is_numeric($art) && $art !== $artid) {
-				$articles[$art] = substr($result, $p2 + 6, $p3 - $p2 - 6);
-			}
-		}
-
-		// get a valid apretaste email address
-		$utils = new Utils();
-		$validEmailAddress = $utils->getValidEmailAddress();
-
-		foreach ($articles as $art => $caption) {
-			$result = str_replace("<a href=\"./$art.htm\">$caption</a>", "<alink href=\"mailto:$validEmailAddress?subject=DOCTOR ARTICULO $art\" target=\"_blank\">$caption</alink>",
-				$result);
-		}
-
-		$result = strip_tags($result, "<alink><h1><p><h2><h3><b><i><u><div><ul><li>");
-		$result = str_replace('<alink ', '<a ', $result);
-		$result = str_replace('</alink>', '</a>', $result);
-
-		return array('title' => $title, 'body' => $result);
+		// return
+		return array('title' => $title, 'body' => $summary . $body);
 	}
 }
