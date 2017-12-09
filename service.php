@@ -50,7 +50,7 @@ class Doctor extends Service
 			$crawler = $client->request('GET', $url);
 		} catch (exception $e) {
 			// Send an error notice to programmer
-			$this->utils->createAlert("DOCTOR: Error al leer resultados: ".self::$term, "ERROR");
+			$this->utils->createAlert("DOCTOR: Error al leer resultados: ".self::$term. ". " . $e->getMessage(), "ERROR");
 
 			// respond to user
 			$response = new Response();
