@@ -34,10 +34,10 @@ class Doctor extends Service
 
 		// get the right URL to pull info
 		$url = "https://medlineplus.gov/spanish/healthtopics_a.html";
-		$first = ucfirst(self::$term[0]);
-		if (strpos("ABCDEFGHIJKLMNOPQRSTUVWXYZ0987654321", $first) !== false) {
+		$first = self::$term[0];
+		if (strpos("ABCDEFGHIJKLMNOPQRSTUVWXYZ0987654321", strtoupper($first)) !== false) {
 
-			if ($first == 'x' || $first == 'y' || $first = 'z') $first = 'xyz';
+			if ($first == 'x' || $first == 'y' || $first == 'z') $first = 'xyz';
 
 			if (strpos("0987654321", $first) !== false) {
 				$url = "https://medlineplus.gov/spanish/healthtopics_0-9.htm";
