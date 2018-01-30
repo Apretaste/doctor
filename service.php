@@ -33,13 +33,16 @@ class Doctor extends Service
 		self::$term = $this->utils->removeTildes(self::$term);
 
 		// get the right URL to pull info
-		$url = "https://www.nlm.nih.gov/medlineplus/spanish/ency/encyclopedia_A.htm";
+		$url = "https://medlineplus.gov/spanish/healthtopics_a.html";
 		$first = ucfirst(self::$term[0]);
 		if (strpos("ABCDEFGHIJKLMNOPQRSTUVWXYZ0987654321", $first) !== false) {
+
+			if ($first == 'x' || $first == 'y' || $first = 'z') $first = 'xyz';
+
 			if (strpos("0987654321", $first) !== false) {
-				$url = "https://www.nlm.nih.gov/medlineplus/spanish/ency/encyclopedia_0-9.htm";
+				$url = "https://medlineplus.gov/spanish/healthtopics_0-9.htm";
 			} else
-				$url = "https://www.nlm.nih.gov/medlineplus/spanish/ency/encyclopedia_{$first}.htm";
+				$url = "https://medlineplus.gov/spanish/healthtopics_{$first}.htm";
 		}
 
 		$client = new Client();
@@ -61,7 +64,8 @@ class Doctor extends Service
 
 		try {
 			$result = $crawler->filter("a")->each(function ($node, $i) {
-				if (strpos($node->attr('href'), "article/") !== false) {
+				if (strpos($node->attr('href'), "https://medlineplus.gov/spanish/") !== false
+				&& strpos($node->attr('href'), "https://medlineplus.gov/spanish/healthtopics_") === false) {
 					// remove tildes and special chars
 					$text = $this->utils->removeTildes($node->text());
 
@@ -69,7 +73,7 @@ class Doctor extends Service
 					similar_text($text, self::$term, $simil);
 					if ($simil >= 60) {
 						$art_id = $node->attr('href');
-						$art_id = str_replace(array('article/', '.htm'), '', $art_id);
+						$art_id = str_replace(array('https://medlineplus.gov/spanish/', '.html'), '', $art_id);
 						self::$similar_terms[$art_id] = $node->text();
 					}
 
@@ -83,7 +87,7 @@ class Doctor extends Service
 		} catch (exception $e) {}
 
 		// remove the current ID from the list of similar terms
-		$artid = str_replace(array('article/','.htm','./','article'), '', self::$article);
+		$artid = str_replace(array('https://medlineplus.gov/spanish/','.html', './', 'article'), '', self::$article);
 		if (isset(self::$similar_terms[$artid])) unset(self::$similar_terms[$artid]);
 
 		// respond with error if article not found
