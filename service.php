@@ -40,9 +40,9 @@ class Doctor extends Service
 			if ($first == 'x' || $first == 'y' || $first == 'z') $first = 'xyz';
 
 			if (strpos("0987654321", $first) !== false) {
-				$url = "https://medlineplus.gov/spanish/healthtopics_0-9.htm";
+				$url = "https://medlineplus.gov/spanish/healthtopics_0-9.html";
 			} else
-				$url = "https://medlineplus.gov/spanish/healthtopics_{$first}.htm";
+				$url = "https://medlineplus.gov/spanish/healthtopics_{$first}.html";
 		}
 
 		$client = new Client();
