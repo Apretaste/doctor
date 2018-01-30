@@ -157,7 +157,7 @@ class Doctor extends Service
 	{
 		// get the crawler object
 		try {
-			$url = "https://www.nlm.nih.gov/medlineplus/spanish/ency/article/$artid.htm";
+			$url = "https://medlineplus.gov/spanish/$artid.html";
 			$client = new Client();
 			$crawler = $client->request('GET', $url);
 		} catch (exception $e) { return false; }
