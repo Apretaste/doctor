@@ -67,7 +67,7 @@ class Doctor extends Service
 				if (strpos($node->attr('href'), "https://medlineplus.gov/spanish/") !== false
 				&& strpos($node->attr('href'), "https://medlineplus.gov/spanish/healthtopics_") === false) {
 					// remove tildes and special chars
-					$text = $this->utils->removeTildes($node->text());
+					$text = strtolower($this->utils->removeTildes($node->text()));
 
 					// add all similar terms to the list of similar
 					similar_text($text, self::$term, $simil);
