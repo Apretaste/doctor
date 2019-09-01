@@ -2,189 +2,186 @@
 
 use Goutte\Client;
 
-class Doctor extends Service
+class DoctorService extends ApretasteService
 {
-	static $term = null;
-	static $article = null;
-	static $max = 0;
-	static $temp = array();
-	static $similar_terms = array();
 
-	/**
-	 * Function executed when the service is called
-	 *
-	 * @param Request
-	 * @return Response
-	 * */
-	public function _main(Request $request)
-	{
-		// do not allow blank searches
-		if(empty($request->query))
-		{
-			$response = new Response();
-			$response->setCache();
-			$response->setResponseSubject("Que desea preguntale al doctor?");
-			$response->createFromTemplate("home.tpl", array());
-			return $response;
-		}
+    static $term = null;
 
-		// lower case and remove tildes for the term
-		self::$term = trim(strtolower($request->query));
-		self::$term = $this->utils->removeTildes(self::$term);
+    static $article = null;
 
-		// get the right URL to pull info
-		$url = "https://medlineplus.gov/spanish/healthtopics_a.html";
-		$first = self::$term[0];
-		if (strpos("ABCDEFGHIJKLMNOPQRSTUVWXYZ0987654321", strtoupper($first)) !== false) {
+    static $max = 0;
 
-			if ($first == 'x' || $first == 'y' || $first == 'z') $first = 'xyz';
+    static $temp = [];
 
-			if (strpos("0987654321", $first) !== false) {
-				$url = "https://medlineplus.gov/spanish/healthtopics_0-9.html";
-			} else
-				$url = "https://medlineplus.gov/spanish/healthtopics_{$first}.html";
-		}
+    static $similar_terms = [];
 
-		$client = new Client();
-		$guzzle = $client->getClient();
+    /**
+     * Function executed when the service is called
+     */
+    public function _main()
+    {
+        // do not allow blank searches
+        if (empty($this->request->input->data->query)) {
+            $this->response->setTemplate("home.ejs", []);
 
-		// create a crawler
-		try {
-			$crawler = $client->request('GET', $url);
-		} catch (exception $e) {
-			// Send an error notice to programmer
-			$this->utils->createAlert("DOCTOR: Error al leer resultados: ".self::$term. ". " . $e->getMessage(), "ERROR");
+            return;
+        }
 
-			// respond to user
-			$response = new Response();
-			$response->setResponseSubject("DOCTOR: Estamos presentando problemas");
-			$response->createFromText("Estamos presentando problemas con el doctor. Por favor intente m&aacute;s tarde. Hemos avisado al personal tecnico para corregir este error.");
-			return $response;
-		}
+        // lower case and remove tildes for the term
+        self::$term = trim(strtolower($this->request->input->data->query));
 
-		try {
-			$result = $crawler->filter("a")->each(function ($node, $i) {
-				if (strpos($node->attr('href'), "https://medlineplus.gov/spanish/") !== false
-				&& strpos($node->attr('href'), "https://medlineplus.gov/spanish/healthtopics_") === false) {
-					// remove tildes and special chars
-					$text = strtolower($this->utils->removeTildes($node->text()));
+        // get the right URL to pull info
+        $url = "https://medlineplus.gov/spanish/healthtopics_a.html";
+        $first = self::$term[0];
+        if (strpos("ABCDEFGHIJKLMNOPQRSTUVWXYZ0987654321", strtoupper($first)) !== false) {
 
-					// add all similar terms to the list of similar
-					similar_text($text, self::$term, $simil);
-					if ($simil >= 60) {
-						$art_id = $node->attr('href');
-						$art_id = str_replace(array('https://medlineplus.gov/spanish/', '.html'), '', $art_id);
-						self::$similar_terms[$art_id] = $node->text();
-					}
+            if ($first == 'x' || $first == 'y' || $first == 'z') {
+                $first = 'xyz';
+            }
 
-					// find the term that is closer to the text passed
-					if ($simil > self::$max && $simil >= 85) {
-						self::$max = $simil;
-						self::$article = $node->attr('href');
-					}
-				}
-			});
-		} catch (exception $e) {}
+            if (strpos("0987654321", $first) !== false) {
+                $url = "https://medlineplus.gov/spanish/healthtopics_0-9.html";
+            } else {
+                $url = "https://medlineplus.gov/spanish/healthtopics_{$first}.html";
+            }
+        }
 
-		// remove the current ID from the list of similar terms
-		$artid = str_replace(array('https://medlineplus.gov/spanish/','.html', './', 'article'), '', self::$article);
-		if (isset(self::$similar_terms[$artid])) unset(self::$similar_terms[$artid]);
+        $client = new Client();
+        $guzzle = $client->getClient();
 
-		// respond with error if article not found
-		if(empty(self::$article)){
-			$response = new Response();
-			$response->setCache();
-			$response->setResponseSubject("No se encontro respuesta para " . self::$term);
-			$response->createFromTemplate("not_found.tpl", array("term" => self::$term, "similars" => self::$similar_terms));
-			return $response;
-		}
+        // create a crawler
+        try {
+            $crawler = $client->request('GET', $url);
+        } catch (exception $e) {
+            // Send an error notice to programmer
+            Utils::createAlert("DOCTOR: Error al leer resultados: ".self::$term.". ".$e->getMessage(), "ERROR");
 
-		// get the article ID of the term selected
-		$article = $this->getArticle($artid);
+            // respond to user
+            $this->simpleMessage("DOCTOR: Estamos presentando problemas",
+                "Estamos presentando problemas con el doctor. Por favor intente m&aacute;s tarde. Hemos avisado al personal tecnico para corregir este error.");
 
-		// create array to send info to the view
-		$responseContent = array(
-			"term" => $article['title'],
-			"result" => $article['body'],
-			"similars" => self::$similar_terms
-		);
+            return;
+        }
 
-		// create the response
-		$response = new Response();
-		$response->setCache();
-		$response->setResponseSubject("Respuesta a su busqueda: " . self::$term);
-		$response->createFromTemplate("basic.tpl", $responseContent);
-		return $response;
-	}
+        try {
+            $result = $crawler->filter("a")->each(function ($node, $i) {
+                if (strpos($node->attr('href'), "https://medlineplus.gov/spanish/") !== false
+                    && strpos($node->attr('href'), "https://medlineplus.gov/spanish/healthtopics_") === false) {
 
-	/**
-	 * Subservice DOCTOR ARTICULO ######
-	 *
-	 * @param Request
-	 * @return Response
-	 */
-	public function _articulo(Request $request)
-	{
-		$result = $this->getArticle($request->query);
+                    $text = strtolower($node->text());
 
-		if (empty($result)) {
-			$response = new Response();
-			$response->setCache();
-			$response->setResponseSubject("No se encontro respuesta a su busqueda: " . self::$term);
-			$response->createFromText("No se encontr&oacute; respuesta a su b&uacute;squeda: " . self::$term);
-			return $response;
-		}
+                    // add all similar terms to the list of similar
+                    similar_text($text, self::$term, $simil);
+                    if ($simil >= 60) {
+                        $art_id = $node->attr('href');
+                        $art_id = str_replace(['https://medlineplus.gov/spanish/', '.html'], '', $art_id);
+                        self::$similar_terms[$art_id] = $node->text();
+                    }
 
-		// create an object to send to the template
-		$responseContent = array(
-			"term" => $result['title'],
-			"result" => $result['body'],
-			"similars" => array()
-		);
+                    // find the term that is closer to the text passed
+                    if ($simil > self::$max && $simil >= 85) {
+                        self::$max = $simil;
+                        self::$article = $node->attr('href');
+                    }
+                }
+            });
+        } catch (exception $e) {
+        }
 
-		// create the response
-		$response = new Response();
-		$response->setCache();
-		$response->setResponseSubject("Enciclopedia medica:" . $result['title']);
-		$response->createFromTemplate("basic.tpl", $responseContent);
-		return $response;
-	}
+        // remove the current ID from the list of similar terms
+        $artid = str_replace(['https://medlineplus.gov/spanish/', '.html', './', 'article'], '', self::$article);
+        if (isset(self::$similar_terms[$artid])) {
+            unset(self::$similar_terms[$artid]);
+        }
 
-	/**
-	 * Get an article based on the ID
-	 */
-	private function getArticle($artid)
-	{
-		// get the crawler object
-		try {
-			$url = "https://medlineplus.gov/spanish/$artid.html";
-			$client = new Client();
-			$crawler = $client->request('GET', $url);
-		} catch (exception $e) { return false; }
+        // respond with error if article not found
+        if (empty(self::$article)) {
+            $this->response->setTemplate("not_found.ejs", [
+                "term"     => self::$term,
+                "similars" => self::$similar_terms
+            ]);
 
-		// get the title
-		$title = "";
-		try {
-			$title = $crawler->filter("div.page-title >h1")->text();
-		} catch (exception $e) { }
+            return;
+        }
 
-		// get the summary
-		$summary = "";
-		try {
-			$summary = $crawler->filter("div#ency_summary")->html();
-			$summary = $this->utils->removeTildes($summary);
-			$summary = preg_replace('#<a.*?>(.*?)</a>#i', '\1', $summary); // remove links
-		} catch (exception $e) { }
+        // get the article ID of the term selected
+        $article = $this->getArticle($artid);
 
-		// get the body
-		$body = "";
-		try {
-			$body = $crawler->filter("div.section-body")->html();
-			$body = $this->utils->removeTildes($body); // remove tidles
-			$body = preg_replace('#<a.*?>(.*?)</a>#i', '\1', $body); // remove links
-		} catch (exception $e) { }
+        // create array to send info to the view
+        $responseContent = [
+            "term"     => $article['title'],
+            "result"   => $article['body'],
+            "similars" => self::$similar_terms
+        ];
 
-		// return
-		return array('title' => $title, 'body' => $summary . $body);
-	}
+        // create the response
+        $this->response->setTemplate("basic.ejs", $responseContent);
+    }
+
+    /**
+     * Subservice DOCTOR ARTICULO ######
+     *
+     */
+    public function _articulo()
+    {
+        $result = $this->getArticle($this->request->input->data->query);
+
+        if (empty($result)) {
+            $this->simpleMessage("No se encontro respuesta a su busqueda: ".self::$term,
+                "No se encontr&oacute; respuesta a su b&uacute;squeda: ".self::$term);
+
+            return;
+        }
+
+        // create an object to send to the template
+        $responseContent = [
+            "term"     => $result['title'],
+            "result"   => $result['body'],
+            "similars" => []
+        ];
+
+        // create the response
+        $this->response->setTemplate("basic.ejs", $responseContent);
+    }
+
+    /**
+     * Get an article based on the ID
+     */
+    private function getArticle($artid)
+    {
+        // get the crawler object
+        try {
+            $url = "https://medlineplus.gov/spanish/$artid.html";
+            $client = new Client();
+            $crawler = $client->request('GET', $url);
+        } catch (exception $e) {
+            return false;
+        }
+
+        // get the title
+        $title = "";
+        try {
+            $title = $crawler->filter("div.page-title >h1")->text();
+        } catch (exception $e) {
+        }
+
+        // get the summary
+        $summary = "";
+        try {
+            $summary = $crawler->filter("div#ency_summary")->html();
+            $summary = preg_replace('#<a.*?>(.*?)</a>#i', '\1', $summary); // remove links
+        } catch (exception $e) {
+        }
+
+        // get the body
+        $body = "";
+        try {
+            $body = $crawler->filter("div.section-body")->html();
+            $body = preg_replace('#<a.*?>(.*?)</a>#i', '\1', $body); // remove links
+        } catch (exception $e) {
+        }
+
+        // return
+        return ['title' => $title, 'body' => $summary.$body];
+    }
 }

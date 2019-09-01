@@ -1,0 +1,17 @@
+<div class="row">
+	<div class="col s12 m12 l12">
+		<p>No se encontr&oacute; respuesta a su b&uacute;squeda: <b><%= term %></b></p>
+		<% if (similars) { %>
+			<h2>Art&iacute;culos similares</h2>
+			<ul>
+				<% for(var artid in similars) { %>
+					<li>
+						<a href="#!" onclick="apretaste.send({command: 'DOCTOR ARTICULO', data:{query: '<%= artid %>'}});">
+						<%= similars[artid] %> %>
+						</a>
+					</li>
+				<% } %>
+			</ul>
+		<% } %>
+	</div>
+</div>
