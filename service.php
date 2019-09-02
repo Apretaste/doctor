@@ -172,7 +172,7 @@ class DoctorService extends ApretasteService
         // get the summary
         $summary = "";
         try {
-            $summary = $crawler->filter("div#ency_summary")->html();
+            $summary = $crawler->filter("div#topic-summary")->html();
             $summary = preg_replace('#<a.*?>(.*?)</a>#i', '\1', $summary); // remove links
         } catch (exception $e) {
         }
