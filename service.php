@@ -178,14 +178,14 @@ class DoctorService extends ApretasteService
         }
 
         // get the body
-        $body = "";
+       /* $body = "";
         try {
             $body = $crawler->filter("div.section-body")->html();
             $body = preg_replace('#<a.*?>(.*?)</a>#i', '\1', $body); // remove links
         } catch (exception $e) {
-        }
+        }*/
 
         // return
-        return ['title' => $title, 'body' => $summary.$body];
+        return ['title' => $title, 'body' => $summary/*.$body*/];
     }
 }
