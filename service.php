@@ -20,6 +20,8 @@ class DoctorService extends ApretasteService
      */
     public function _main()
     {
+        $this->response->setLayout('sms.ejs');
+
         // do not allow blank searches
         if (empty($this->request->input->data->query)) {
             $this->response->setTemplate("home.ejs", []);
@@ -124,6 +126,8 @@ class DoctorService extends ApretasteService
      */
     public function _articulo()
     {
+        $this->response->setLayout('sms.ejs');
+
         $result = $this->getArticle($this->request->input->data->query);
 
         if (empty($result)) {
