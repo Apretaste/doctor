@@ -1,10 +1,10 @@
 <div class="row">
 	<div class="col s12">
 		<h1><%= term %></h1>
-		<%= result %>
+		<%- result %>
 		</br>
 
-		<% if (similars) { %>
+		<% if (similars.length > 0) { %>
 			<h2>Art&iacute;culos similares</h2>
 			<ul>
 				<% for(var artid in similars) { %>
