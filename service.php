@@ -2,32 +2,32 @@
 
 use Goutte\Client;
 
-class DoctorService extends ApretasteService
+class Service
 {
 	/**
 	 * Function executed when the service is called
 	 */
-	public function _main()
+	public function _main(Request $request, Response $response)
 	{
-		$this->response->setCache("year");
-		$this->response->setTemplate("home.ejs");
+		$response->setCache("year");
+		$response->setTemplate("home.ejs");
 	}
 
 	/**
 	 * Get a medical article
 	 *
 	 */
-	public function _articulo()
+	public function _articulo(Request $request, Response $response)
 	{
 		// lower case and remove tildes for the term
-		$term = trim(strtolower($this->request->input->data->query));
+		$term = trim(strtolower($request->input->data->query));
 
 		// get the ID for that article
 		$res = $this->getArticleId($term);
 
 		// respond with error if article not found
 		if (empty($res['artid'])) {
-			return $this->response->setTemplate("message.ejs", ["term"=>$term, "similars"=>$res['similars']]);
+			return $response->setTemplate("message.ejs", ["term"=>$term, "similars"=>$res['similars']]);
 		}
 
 		// get the article for the ID
@@ -41,17 +41,17 @@ class DoctorService extends ApretasteService
 		];
 
 		// create the response
-		$this->response->setCache("year");
-		$this->response->setTemplate("basic.ejs", $content);
+		$response->setCache("year");
+		$response->setTemplate("basic.ejs", $content);
 	}
 
 	/**
 	 * Get a medical article having the article ID
 	 */
-	public function _similar()
+	public function _similar(Request $request, Response $response)
 	{
 		// get the query
-		$result = $this->getArticle($this->request->input->data->query);
+		$result = $this->getArticle($request->input->data->query);
 
 		// treat empty searches
 		if (empty($result)) {
@@ -67,8 +67,8 @@ class DoctorService extends ApretasteService
 		];
 
 		// create the response
-		$this->response->setCache("year");
-		$this->response->setTemplate("basic.ejs", $content);
+		$response->setCache("year");
+		$response->setTemplate("basic.ejs", $content);
 	}
 
 	/**
