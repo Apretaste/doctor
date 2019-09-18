@@ -1,7 +1,7 @@
 {
 	"name": "doctor",
-	"version": "1",
-	"description": "Realiza preguntas sobre salud, enfermedades y sintomas",
+	"version": 2,
+	"description": "Realiza preguntas sobre salud, enfermedades y síntomas",
 	"category": "ocio",
 	"creator": "kumahacker@gmail.com",
 	"listed": true
