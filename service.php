@@ -1,13 +1,15 @@
 <?php
 
 use Goutte\Client;
+use Apretaste\Request;
+use Apretaste\Response;
 
 class Service
 {
 	/**
 	 * Function executed when the service is called
 	 */
-	public function _main(Request $request, Response $response)
+	public function _main(Request $request, Response &$response)
 	{
 		$response->setCache("year");
 		$response->setTemplate("home.ejs");
@@ -16,8 +18,12 @@ class Service
 	/**
 	 * Get a medical article
 	 *
+	 * @param \Apretaste\Request  $request
+	 * @param \Apretaste\Response $response
+	 *
+	 * @throws \Framework\Alert
 	 */
-	public function _articulo(Request $request, Response $response)
+	public function _articulo(Request $request, Response &$response)
 	{
 		// lower case and remove tildes for the term
 		$term = trim(strtolower($request->input->data->query));
@@ -27,7 +33,8 @@ class Service
 
 		// respond with error if article not found
 		if (empty($res['artid'])) {
-			return $response->setTemplate("message.ejs", ["term"=>$term, "similars"=>$res['similars']]);
+			$response->setTemplate("message.ejs", ["term"=>$term, "similars"=>$res['similars']]);
+			return;
 		}
 
 		// get the article for the ID
@@ -47,8 +54,13 @@ class Service
 
 	/**
 	 * Get a medical article having the article ID
+	 *
+	 * @param \Apretaste\Request  $request
+	 * @param \Apretaste\Response $response
+	 *
+	 * @throws \Framework\Alert
 	 */
-	public function _similar(Request $request, Response $response)
+	public function _similar(Request $request, Response &$response)
 	{
 		// get the query
 		$result = $this->getArticle($request->input->data->query);
@@ -82,8 +94,12 @@ class Service
 		$similar_terms = [];
 
 		// load from cache if exists
-		$cache = Utils::getTempDir() . date("Y") . "_doctor_article_" . md5($term) . ".tmp";
-		if(file_exists($cache)) $content = unserialize(file_get_contents($cache));
+		$cache = TEMP_PATH . date("Y") . "_doctor_article_" . md5($term) . ".tmp";
+		if(file_exists($cache)) {
+			/** @var object $content */
+			$content = unserialize(file_get_contents($cache));
+		}
+
 
 		// get data from the internet
 		else {
@@ -143,11 +159,15 @@ class Service
 
 	/**
 	 * Get an article based on the ID
+	 *
+	 * @param $artid
+	 *
+	 * @return array|bool|mixed
 	 */
 	private function getArticle($artid)
 	{
 		// load from cache if exists
-		$cache = Utils::getTempDir() . date("Y") . "_doctor_artid" . md5($artid) . ".tmp";
+		$cache = TEMP_PATH  . date("Y") . "_doctor_artid" . md5($artid) . ".tmp";
 		if(file_exists($cache)) $content = unserialize(file_get_contents($cache));
 
 		// get data from the internet
