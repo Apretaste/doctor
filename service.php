@@ -1,5 +1,6 @@
 <?php
 
+use Framework\Crawler;
 use Goutte\Client;
 use Apretaste\Request;
 use Apretaste\Response;
@@ -11,8 +12,8 @@ class Service
 	 */
 	public function _main(Request $request, Response &$response)
 	{
-		$response->setCache("year");
-		$response->setTemplate("home.ejs");
+		$response->setCache('year');
+		$response->setTemplate('home.ejs');
 	}
 
 	/**
@@ -33,7 +34,7 @@ class Service
 
 		// respond with error if article not found
 		if (empty($res['artid'])) {
-			$response->setTemplate("message.ejs", ["term"=>$term, "similars"=>$res['similars']]);
+			$response->setTemplate('message.ejs', ['term' =>$term, 'similars' =>$res['similars']]);
 			return;
 		}
 
@@ -42,14 +43,14 @@ class Service
 
 		// create array to send info to the view
 		$content = [
-			"term"     => $article['title'],
-			"result"   => $article['body'],
-			"similars" => $res['similars']
+				'term'     => $article['title'],
+				'result'   => $article['body'],
+				'similars' => $res['similars']
 		];
 
 		// create the response
-		$response->setCache("year");
-		$response->setTemplate("basic.ejs", $content);
+		$response->setCache('year');
+		$response->setTemplate('basic.ejs', $content);
 	}
 
 	/**
@@ -67,20 +68,20 @@ class Service
 
 		// treat empty searches
 		if (empty($result)) {
-			$this->simpleMessage("No hay respuesta", "No encontramos una respuesta a su búsqueda. Por favor trate con otro término.");
+			$this->simpleMessage('No hay respuesta', 'No encontramos una respuesta a su búsqueda. Por favor trate con otro término.');
 			return;
 		}
 
 		// create an object to send to the template
 		$content = [
-			"term" => $result['title'],
-			"result" => $result['body'],
-			"similars" => []
+				'term'     => $result['title'],
+				'result'   => $result['body'],
+				'similars' => []
 		];
 
 		// create the response
-		$response->setCache("year");
-		$response->setTemplate("basic.ejs", $content);
+		$response->setCache('year');
+		$response->setTemplate('basic.ejs', $content);
 	}
 
 	/**
@@ -90,11 +91,11 @@ class Service
 	{
 		// lower case and remove tildes for the term
 		$term = trim(strtolower($term));
-		$article = "";
+		$article = '';
 		$similar_terms = [];
 
 		// load from cache if exists
-		$cache = TEMP_PATH . date("Y") . "_doctor_article_" . md5($term) . ".tmp";
+		$cache = TEMP_PATH . date('Y') .'_doctor_article_'. md5($term) .'.tmp';
 		if(file_exists($cache)) {
 			/** @var object $content */
 			$content = unserialize(file_get_contents($cache));
@@ -105,22 +106,20 @@ class Service
 		else {
 			// get the right URL to pull info
 			$first = $term[0];
-			if (strpos("ABCDEFGHIJKLMNOPQRSTUVWXYZ0987654321", strtoupper($first)) !== false) {
-				if ($first == 'x' || $first == 'y' || $first == 'z') $first = 'xyz';
-				if (strpos("0987654321", $first) !== false) $url = "https://medlineplus.gov/spanish/healthtopics_0-9.html";
+			if (strpos('ABCDEFGHIJKLMNOPQRSTUVWXYZ0987654321', strtoupper($first)) !== false) {
+				if ($first==='x' || $first==='y' || $first==='z') $first = 'xyz';
+				if (strpos('0987654321', $first) !== false) $url = 'https://medlineplus.gov/spanish/healthtopics_0-9.html';
 				else $url = "https://medlineplus.gov/spanish/healthtopics_{$first}.html";
 			}
 
 			// create a crawler
-			$client = new Client();
-			$guzzle = $client->getClient();
-			$crawler = $client->request('GET', $url);
+			Crawler::start($url);
 
 			try {
-				$result = $crawler->filter("a")->each(function ($node, $i) use ($term, &$article, &$similar_terms) {
+				$result = Crawler::filter('a')->each(function ($node, $i) use ($term, &$article, &$similar_terms) {
 					if (
-						strpos($node->attr('href'), "https://medlineplus.gov/spanish/") !== false
-						&& strpos($node->attr('href'), "https://medlineplus.gov/spanish/healthtopics_") === false
+						strpos($node->attr('href'), 'https://medlineplus.gov/spanish/') !== false
+						&& strpos($node->attr('href'), 'https://medlineplus.gov/spanish/healthtopics_') === false
 					){
 						// lower text
 						$text = strtolower($node->text());
@@ -148,7 +147,7 @@ class Service
 			if (isset($similar_terms[$artid])) unset($similar_terms[$artid]);
 
 			// return values
-			$content =  ["term"=>$term, "artid"=>$artid, "similars"=>$similar_terms];
+			$content =  ['term' =>$term, 'artid' =>$artid, 'similars' =>$similar_terms];
 
 			// save cache file
 			file_put_contents($cache, serialize($content));
@@ -167,28 +166,30 @@ class Service
 	private function getArticle($artid)
 	{
 		// load from cache if exists
-		$cache = TEMP_PATH  . date("Y") . "_doctor_artid" . md5($artid) . ".tmp";
+		$cache = TEMP_PATH  . date('Y') .'_doctor_artid'. md5($artid) .'.tmp';
 		if(file_exists($cache)) $content = unserialize(file_get_contents($cache));
 
 		// get data from the internet
 		else {
 			// get the crawler object
+			$url = "https://medlineplus.gov/spanish/$artid.html";
+
 			try {
-				$url = "https://medlineplus.gov/spanish/$artid.html";
-				$client = new Client();
-				$crawler = $client->request('GET', $url);
-			} catch (exception $e) { return false; }
+				Crawler::start($url);
+			} catch (exception $e) {
+				return false;
+			}
 
 			// get the title
-			$title = "";
+			$title = '';
 			try {
-				$title = $crawler->filter("div.page-title >h1")->text();
+				$title = Crawler::filter('div.page-title >h1')->text();
 			} catch (exception $e) { }
 
 			// get the summary
-			$summary = "";
+			$summary = '';
 			try {
-				$summary = $crawler->filter("div#topic-summary")->html();
+				$summary = Crawler::filter('div#topic-summary')->html();
 				$summary = preg_replace('#<a.*?>(.*?)</a>#i', '\1', $summary); // remove links
 			} catch (exception $e) { }
 
