@@ -122,50 +122,50 @@ class Service
 				} else {
 					$url = "https://medlineplus.gov/spanish/healthtopics_{$first}.html";
 				}
-			}
 
-			// create a crawler
-			Crawler::start($url);
+				// create a crawler
+				Crawler::start($url);
 
-			try {
-				$result = Crawler::filter('a')->each(function ($node, $i) use ($term, &$article, &$similar_terms) {
-					if (
-						strpos($node->attr('href'), 'https://medlineplus.gov/spanish/') !== false
-						&& strpos($node->attr('href'), 'https://medlineplus.gov/spanish/healthtopics_') === false
-					) {
-						// lower text
-						$text = strtolower($node->text());
+				try {
+					$result = Crawler::filter('a')->each(function ($node, $i) use ($term, &$article, &$similar_terms) {
+						if (
+						  strpos($node->attr('href'), 'https://medlineplus.gov/spanish/') !== false
+						  && strpos($node->attr('href'), 'https://medlineplus.gov/spanish/healthtopics_') === false
+						) {
+							// lower text
+							$text = strtolower($node->text());
 
-						// add all similar terms to the list of similar
-						similar_text($text, $term, $simil);
-						if ($simil >= 60) {
-							$art_id = $node->attr('href');
-							$art_id = str_replace(['https://medlineplus.gov/spanish/', '.html'], '', $art_id);
-							$similar_terms[$art_id] = $node->text();
+							// add all similar terms to the list of similar
+							similar_text($text, $term, $simil);
+							if ($simil >= 60) {
+								$art_id = $node->attr('href');
+								$art_id = str_replace(['https://medlineplus.gov/spanish/', '.html'], '', $art_id);
+								$similar_terms[$art_id] = $node->text();
+							}
+
+							// find the term that is closer to the text passed
+							$max = 0;
+							if ($simil > $max && $simil >= 85) {
+								$max = $simil;
+								$article = $node->attr('href');
+							}
 						}
+					});
+				} catch (exception $e) {
+				}
 
-						// find the term that is closer to the text passed
-						$max = 0;
-						if ($simil > $max && $simil >= 85) {
-							$max = $simil;
-							$article = $node->attr('href');
-						}
-					}
-				});
-			} catch (exception $e) {
+				// remove the current ID from the list of similar terms
+				$artid = str_replace(['https://medlineplus.gov/spanish/', '.html', './', 'article'], '', $article);
+				if (isset($similar_terms[$artid])) {
+					unset($similar_terms[$artid]);
+				}
+
+				// return values
+				$content = ['term' => $term, 'artid' => $artid, 'similars' => $similar_terms];
+
+				// save cache file
+				self::saveCache($content, $cacheName);
 			}
-
-			// remove the current ID from the list of similar terms
-			$artid = str_replace(['https://medlineplus.gov/spanish/', '.html', './', 'article'], '', $article);
-			if (isset($similar_terms[$artid])) {
-				unset($similar_terms[$artid]);
-			}
-
-			// return values
-			$content = ['term' => $term, 'artid' => $artid, 'similars' => $similar_terms];
-
-			// save cache file
-			self::saveCache($content, $cacheName);
 		}
 
 		return $content;
