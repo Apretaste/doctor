@@ -40,8 +40,8 @@ class Service
 		// respond with error if article not found
 		if (empty($res['artid'])) {
 			$response->setTemplate('message.ejs', [
-			  'term' => $term,
-			  'similars' => $res['similars']
+				'term' => $term,
+				'similars' => $res['similars'] ?? []
 			]);
 			return;
 		}
@@ -77,8 +77,8 @@ class Service
 		// treat empty searches
 		if (empty($result)) {
 			$response->setTemplate('message.ejs', [
-			  'term' => $request->input->data->query,
-			  'similars' => []
+				'term' => $request->input->data->query,
+				'similars' => []
 			]);
 			return;
 		}
@@ -106,7 +106,7 @@ class Service
 		$similar_terms = [];
 
 		// load from cache if exists
-		$cacheName = 'article_'.md5($term);
+		$cacheName = 'article_' . md5($term);
 		$content = self::loadCache($cacheName);
 
 		if ($content === null) {
@@ -129,8 +129,8 @@ class Service
 				try {
 					$result = Crawler::filter('a')->each(function ($node, $i) use ($term, &$article, &$similar_terms) {
 						if (
-						  strpos($node->attr('href'), 'https://medlineplus.gov/spanish/') !== false
-						  && strpos($node->attr('href'), 'https://medlineplus.gov/spanish/healthtopics_') === false
+							strpos($node->attr('href'), 'https://medlineplus.gov/spanish/') !== false
+							&& strpos($node->attr('href'), 'https://medlineplus.gov/spanish/healthtopics_') === false
 						) {
 							// lower text
 							$text = strtolower($node->text());
@@ -231,7 +231,7 @@ class Service
 	 */
 	public static function getCacheFileName($name): string
 	{
-		return TEMP_PATH.'cache/doctor_'.$name.'_'.date('Ymd').'.tmp';
+		return TEMP_PATH . 'cache/doctor_' . $name . '_' . date('Ymd') . '.tmp';
 	}
 
 	/**
