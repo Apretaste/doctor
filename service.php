@@ -17,8 +17,10 @@ class Service
 	 */
 	public function _main(Request $request, Response &$response)
 	{
+		$images = [SERVICE_PATH . 'doctor' . "/images/main_logo.png"];
+
 		$response->setCache('year');
-		$response->setTemplate('home.ejs');
+		$response->setTemplate('home.ejs', [], $images);
 	}
 
 	/**
