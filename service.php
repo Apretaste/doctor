@@ -10,26 +10,20 @@ class Service
 	/**
 	 * Function executed when the service is called
 	 *
-	 * @param \Apretaste\Request $request
-	 * @param \Apretaste\Response $response
-	 *
-	 * @throws \Framework\Alert
+	 * @param Request $request
+	 * @param Response $response
 	 */
 	public function _main(Request $request, Response &$response)
 	{
-		$images = [SERVICE_PATH . 'doctor' . "/images/main_logo.png"];
-
 		$response->setCache('year');
-		$response->setTemplate('home.ejs', [], $images);
+		$response->setTemplate('home.ejs');
 	}
 
 	/**
 	 * Get a medical article
 	 *
-	 * @param \Apretaste\Request $request
-	 * @param \Apretaste\Response $response
-	 *
-	 * @throws \Framework\Alert
+	 * @param Request $request
+	 * @param Response $response
 	 */
 	public function _articulo(Request $request, Response $response)
 	{
@@ -66,10 +60,8 @@ class Service
 	/**
 	 * Get a medical article having the article ID
 	 *
-	 * @param \Apretaste\Request $request
-	 * @param \Apretaste\Response $response
-	 *
-	 * @throws \Framework\Alert
+	 * @param Request $request
+	 * @param Response $response
 	 */
 	public function _similar(Request $request, Response &$response)
 	{
