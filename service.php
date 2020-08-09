@@ -20,7 +20,7 @@ class Service
 		$images = [SERVICE_PATH . 'doctor' . "/images/main_logo.png"];
 
 		$response->setCache('year');
-		$response->setTemplate('home.ejs', [], $images);
+		$response->setTemplate('home.ejs', ['term' => ''], $images);
 	}
 
 	/**
@@ -34,7 +34,7 @@ class Service
 	public function _articulo(Request $request, Response $response)
 	{
 		// lower case and remove tildes for the term
-		$term = strtolower(trim($request->input->data->query));
+            $term = strtolower(trim($request->input->data->query));
 
 		// get the ID for that article
 		$res = $this->getArticleId($term);
