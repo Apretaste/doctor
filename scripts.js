@@ -2,11 +2,7 @@
 
 var share;
 
-function init() {
-
-	if (typeof term === 'undefined') var term = '';
-	if (typeof result === 'undefined') var result = '';
-
+function init(term, result) {
 	share = {
 		text: term + ": " + removeTags(result).substr(0,100),
 		icon: 'user-nurse',
