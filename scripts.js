@@ -1,5 +1,4 @@
 // globals
-
 var share;
 
 function init(term, result) {
