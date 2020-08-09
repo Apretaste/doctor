@@ -6,6 +6,8 @@ $(document).ready(function () {
 			return false;
 		}
 	});
+
+	$('.modal').modal();
 });
 
 function send() {
@@ -74,3 +76,37 @@ if (!Object.keys) {
 		};
 	}();
 }
+
+// ---
+var share = {
+	text: "Que dice el doctor sobre "+ term + ":" + result.substr(1,100),
+	icon: 'user-nurse',
+	send: function() {
+		apretaste.send({
+			command:'DOCTOR ARTICULO',
+			redirect: false,
+			callback: {
+				name: 'toast',
+				data: 'Se ha compartido en Pizarra el resultado de Doctor'
+			},
+			data: {
+				text: $('#message').val(),
+				image: '',
+				link: {
+					command: btoa(JSON.stringify({
+						command: 'DOCTOR ARTICULO',
+						data: {
+							query: term
+						}
+					})),
+					icon: share.icon,
+					text: share.text
+				}
+			}});
+	}
+}
+
+function toast(message){
+	M.toast({html: message});
+}
+
