@@ -1,7 +1,34 @@
 // globals
 if (typeof term === 'undefined') var term = '';
 if (typeof result === 'undefined') var result = '';
-var share;
+
+var share = {
+	text: term + ":" + removeTags(result).substr(1,100),
+	icon: 'user-nurse',
+	send: function() {
+		apretaste.send({
+			command:'DOCTOR ARTICULO',
+			redirect: false,
+			callback: {
+				name: 'toast',
+				data: 'Se ha compartido en Pizarra el resultado de Doctor'
+			},
+			data: {
+				text: $('#message').val(),
+				image: '',
+				link: {
+					command: btoa(JSON.stringify({
+						command: 'DOCTOR ARTICULO',
+						data: {
+							query: term
+						}
+					})),
+					icon: share.icon,
+					text: share.text
+				}
+			}});
+	}
+}
 
 // functions
 function toast(message){
@@ -97,33 +124,6 @@ $(function () {
 
 	$('.modal').modal();
 
-	share = {
-		text: term + ":" + removeTags(result).substr(1,100),
-		icon: 'user-nurse',
-		send: function() {
-			apretaste.send({
-				command:'DOCTOR ARTICULO',
-				redirect: false,
-				callback: {
-					name: 'toast',
-					data: 'Se ha compartido en Pizarra el resultado de Doctor'
-				},
-				data: {
-					text: $('#message').val(),
-					image: '',
-					link: {
-						command: btoa(JSON.stringify({
-							command: 'DOCTOR ARTICULO',
-							data: {
-								query: term
-							}
-						})),
-						icon: share.icon,
-						text: share.text
-					}
-				}});
-		}
-	}
 });
 
 
