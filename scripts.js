@@ -1,14 +1,24 @@
-// submit search on enter
-$(document).ready(function () {
-	$('#query').keypress(function (e) {
-		if (e.which == 13) {
-			send();
-			return false;
-		}
-	});
+// globals
+if (typeof term === 'undefined') var term = '';
+if (typeof result === 'undefined') var result = '';
+var share;
 
-	$('.modal').modal();
-});
+// functions
+function toast(message){
+	M.toast({html: message});
+}
+
+function removeTags(str) {
+	if ((str===null) || (str===''))
+		return '';
+	else
+		str = str.toString();
+
+	// Regular expression to identify HTML tags in
+	// the input string. Replacing the identified
+	// HTML tag with a null string.
+	return str.replace( /(<([^>]+)>)/ig, '');
+}
 
 function send() {
 	var query = $('#query').val();
@@ -26,7 +36,6 @@ function send() {
 }
 
 // POLYFILL
-
 function _typeof(obj) {
 	if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") {
 		_typeof = function _typeof(obj) {
@@ -77,50 +86,44 @@ if (!Object.keys) {
 	}();
 }
 
-if (typeof term === 'undefined') var term = '';
-if (typeof result === 'undefined') var result = '';
+// events
+$(function () {
+	$('#query').keypress(function (e) {
+		if (e.which === 13) {
+			send();
+			return false;
+		}
+	});
 
-// ---
-var share = {
-	text: term + ":" + removeTags(result).substr(1,100),
-	icon: 'user-nurse',
-	send: function() {
-		apretaste.send({
-			command:'DOCTOR ARTICULO',
-			redirect: false,
-			callback: {
-				name: 'toast',
-				data: 'Se ha compartido en Pizarra el resultado de Doctor'
-			},
-			data: {
-				text: $('#message').val(),
-				image: '',
-				link: {
-					command: btoa(JSON.stringify({
-						command: 'DOCTOR ARTICULO',
-						data: {
-							query: term
-						}
-					})),
-					icon: share.icon,
-					text: share.text
-				}
-			}});
+	$('.modal').modal();
+
+	share = {
+		text: term + ":" + removeTags(result).substr(1,100),
+		icon: 'user-nurse',
+		send: function() {
+			apretaste.send({
+				command:'DOCTOR ARTICULO',
+				redirect: false,
+				callback: {
+					name: 'toast',
+					data: 'Se ha compartido en Pizarra el resultado de Doctor'
+				},
+				data: {
+					text: $('#message').val(),
+					image: '',
+					link: {
+						command: btoa(JSON.stringify({
+							command: 'DOCTOR ARTICULO',
+							data: {
+								query: term
+							}
+						})),
+						icon: share.icon,
+						text: share.text
+					}
+				}});
+		}
 	}
-}
+});
 
-function toast(message){
-	M.toast({html: message});
-}
 
-function removeTags(str) {
-	if ((str===null) || (str===''))
-		return false;
-	else
-		str = str.toString();
-
-	// Regular expression to identify HTML tags in
-	// the input string. Replacing the identified
-	// HTML tag with a null string.
-	return str.replace( /(<([^>]+)>)/ig, '');
-}
