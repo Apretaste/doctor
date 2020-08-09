@@ -20,7 +20,7 @@ class Service
 		$images = [SERVICE_PATH . 'doctor' . "/images/main_logo.png"];
 
 		$response->setCache('year');
-		$response->setTemplate('home.ejs', ['term' => ''], $images);
+		$response->setTemplate('home.ejs', ['term' => '', 'result' => ''], $images);
 	}
 
 	/**

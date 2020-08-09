@@ -77,6 +77,8 @@ if (!Object.keys) {
 	}();
 }
 
+if (typeof term === 'undefined') var term = '';
+if (typeof result === 'undefined') var result = '';
 // ---
 var share = {
 	text: "Que dice el doctor sobre "+ term + ":" + result.substr(1,100),
