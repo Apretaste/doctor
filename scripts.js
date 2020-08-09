@@ -79,9 +79,10 @@ if (!Object.keys) {
 
 if (typeof term === 'undefined') var term = '';
 if (typeof result === 'undefined') var result = '';
+
 // ---
 var share = {
-	text: "Que dice el doctor sobre "+ term + ":" + result.substr(1,100),
+	text: term + ":" + removeTags(result).substr(1,100),
 	icon: 'user-nurse',
 	send: function() {
 		apretaste.send({
@@ -112,3 +113,14 @@ function toast(message){
 	M.toast({html: message});
 }
 
+function removeTags(str) {
+	if ((str===null) || (str===''))
+		return false;
+	else
+		str = str.toString();
+
+	// Regular expression to identify HTML tags in
+	// the input string. Replacing the identified
+	// HTML tag with a null string.
+	return str.replace( /(<([^>]+)>)/ig, '');
+}
