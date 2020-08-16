@@ -34,7 +34,7 @@ class Service
 	public function _articulo(Request $request, Response $response)
 	{
 		// lower case and remove tildes for the term
-            $term = strtolower(trim($request->input->data->query));
+		$term = strtolower(trim($request->input->data->query ?? ''));
 
 		// get the ID for that article
 		$res = $this->getArticleId($term);
@@ -214,9 +214,7 @@ class Service
 
 				// save cache file
 				self::saveCache($content, $cacheName);
-
 			} catch (exception $e) {
-
 			}
 		}
 
