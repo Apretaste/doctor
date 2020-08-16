@@ -36,8 +36,12 @@ class Service
 		// lower case and remove tildes for the term
 		$term = strtolower(trim($request->input->data->query ?? ''));
 
-		// get the ID for that article
-		$res = $this->getArticleId($term);
+		$res = null;
+
+		if (!empty($term)) {
+			// get the ID for that article
+			$res = $this->getArticleId($term);
+		}
 
 		// respond with error if article not found
 		if (empty($res['artid'])) {
