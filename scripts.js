@@ -3,11 +3,11 @@ var share;
 
 function init(term, result) {
 	share = {
-		text: term + ": " + removeTags(result).substr(0,100),
+		text: term + ": " + removeTags(result).substr(0,50) + '...',
 		icon: 'user-nurse',
 		send: function() {
 			apretaste.send({
-				command:'DOCTOR ARTICULO',
+				command:'PIZARRA PUBLICAR',
 				redirect: false,
 				callback: {
 					name: 'toast',
