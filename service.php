@@ -16,7 +16,7 @@ class Service
 	public function _main(Request $request, Response &$response)
 	{
 		$response->setCache('year');
-		$response->setTemplate('home.ejs', ['term' => '', 'result' => ''], $images);
+		$response->setTemplate('home.ejs', ['term' => '', 'result' => '']);
 	}
 
 	/**
