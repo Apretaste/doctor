@@ -1,9 +1,13 @@
+function teaser(text) {
+	return text.length <= 50 ? text : text.substr(0, 50) + "...";
+}
+
 // globals
 var share;
 
 function init(term, result) {
 	share = {
-		text: term + ": " + removeTags(result).substr(0,50) + '...',
+		text: teaser(term + ": " + removeTags(result)),
 		icon: 'user-nurse',
 		send: function() {
 			apretaste.send({
