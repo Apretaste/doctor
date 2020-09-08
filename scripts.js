@@ -1,12 +1,56 @@
-// submit search on enter
-$(document).ready(function () {
-	$('#query').keypress(function (e) {
-		if (e.which == 13) {
-			send();
-			return false;
+function teaser(text) {
+	return text.length <= 50 ? text : text.substr(0, 50) + "...";
+}
+
+// globals
+var share;
+
+function init(term, result) {
+	share = {
+		text: teaser(term + ": " + removeTags(result)),
+		icon: 'user-nurse',
+		send: function() {
+			apretaste.send({
+				command:'PIZARRA PUBLICAR',
+				redirect: false,
+				callback: {
+					name: 'toast',
+					data: 'Se ha compartido en Pizarra el resultado de Doctor'
+				},
+				data: {
+					text: $('#message').val(),
+					image: '',
+					link: {
+						command: btoa(JSON.stringify({
+							command: 'DOCTOR ARTICULO',
+							data: {
+								query: term
+							}
+						})),
+						icon: share.icon,
+						text: share.text
+					}
+				}});
 		}
-	});
-});
+	}
+}
+
+// functions
+function toast(message){
+	M.toast({html: message});
+}
+
+function removeTags(str) {
+	if ((str===null) || (str===''))
+		return '';
+	else
+		str = str.toString();
+
+	// Regular expression to identify HTML tags in
+	// the input string. Replacing the identified
+	// HTML tag with a null string.
+	return str.replace( /(<([^>]+)>)/ig, '');
+}
 
 function send() {
 	var query = $('#query').val();
@@ -24,7 +68,6 @@ function send() {
 }
 
 // POLYFILL
-
 function _typeof(obj) {
 	if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") {
 		_typeof = function _typeof(obj) {
@@ -74,3 +117,18 @@ if (!Object.keys) {
 		};
 	}();
 }
+
+// events
+$(function () {
+	$('#query').keypress(function (e) {
+		if (e.which === 13) {
+			send();
+			return false;
+		}
+	});
+
+	$('.modal').modal();
+
+});
+
+

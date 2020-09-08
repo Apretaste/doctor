@@ -1,8 +1,20 @@
-.bottom-space {
-    margin-bottom: 80px;
+/* HOME SCREEN */
+
+.home .main-icon {
+	margin: 20% 0px 20px 0px;;
 }
 
-.home img {
-    margin: 30% 0px 20px 0px;;
-    height: 150px;
+.btn-floating.second {
+    margin-right: -10px;
+    width: 45px;
+    height: 45px;
+    line-height: 58px;
+}
+
+.btn-floating.third {
+    bottom: 45px;
+    left: 87px;
+    width: 45px;
+    height: 45px;
+    line-height: 58px;
 }
